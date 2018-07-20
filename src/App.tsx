@@ -34,6 +34,8 @@ import { notifications, theme as themeStorage } from 'src/utilities/storage';
 
 import BetaNotification from 'src/BetaNotification';
 
+import { getToken } from 'src/services/linodes';
+
 shim(); // allows for .finally() usage
 
 const Account = DefaultLoader({
@@ -169,6 +171,7 @@ interface State {
   betaNotification: boolean;
   typesContext: WithTypesContext;
   regionsContext: WithRegionsContext;
+  socketMessages: any;
 }
 
 type CombinedProps =
@@ -201,6 +204,7 @@ export class App extends React.Component<CombinedProps, State> {
   state: State = {
     menuOpen: false,
     betaNotification: false,
+    socketMessages: [],
     typesContext: {
       lastUpdated: 0,
       loading: false,
@@ -250,12 +254,37 @@ export class App extends React.Component<CombinedProps, State> {
     },
   };
 
+  /* Some browsers fire the resize event quite often so throttle it using an Observable */
+  // private resizeObservable = Observable.fromEvent(window, 'resize').throttleTime(200);
+
+  socket: WebSocket;
+
   componentDidMount() {
     const { dispatchRequest, dispatchResponse } = this.props;
 
     if (notifications.beta.get() === 'open') {
       this.setState({ betaNotification: true });
     }
+
+    getToken()
+    .then((data: any) => {
+      console.log(data);
+      this.socket = new WebSocket(`ws://events.lindev.local:7443/${data.data.token}`);
+
+      this.socket.onopen = () => {
+        console.log('opened');
+      }
+
+      this.socket.onmessage = (e: any) => {
+        console.log('message recieved!');
+        console.log(e)
+        this.setState({ socketMessages: e });
+      }
+
+      this.socket.onclose = () => {
+        console.log('closed');
+      }
+    })
 
     dispatchRequest(['profile']);
     getProfile()
@@ -302,6 +331,8 @@ export class App extends React.Component<CombinedProps, State> {
     const { menuOpen } = this.state;
     const { classes, longLivedLoaded, documentation, toggleTheme } = this.props;
     const hasDoc = documentation.length > 0;
+
+    console.log(this.state.socketMessages);
 
     return (
       <React.Fragment>

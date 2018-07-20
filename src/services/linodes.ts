@@ -380,3 +380,10 @@ export const startMutation = (linodeID: number) => {
   )
     .then(response => response.data)
 }
+
+export const getToken = () => {
+  return Request(
+    setURL(`${API_ROOT}/profile/websocket-token`),
+    setMethod('POST'),
+  );
+}
