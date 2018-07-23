@@ -26,6 +26,8 @@ import { getDeprecatedLinodeTypes , getLinodeTypes } from 'src/services/linodes'
 // import VolumeDrawer from 'src/features/Volumes/VolumeDrawer';
 import { getRegions } from 'src/services/misc';
 import { getProfile } from 'src/services/profile';
+
+import { addEvent, removeEvent } from 'src/store/reducers/events';
 import { request, response } from 'src/store/reducers/resources';
 import initSurvicate from 'src/survicate';
 
@@ -163,7 +165,10 @@ interface Props {
 interface ConnectedProps {
   dispatchRequest: typeof request;
   dispatchResponse: typeof response;
+  dispatchAddEvent: typeof addEvent;
+  dispatchRemoveEvent: typeof removeEvent;
   documentation: Linode.Doc[];
+  events: Linode.Event[];
 }
 
 interface State {
@@ -264,31 +269,39 @@ export class App extends React.Component<CombinedProps, State> {
   }
 
   componentDidMount() {
-    const { dispatchRequest, dispatchResponse } = this.props;
+    const { dispatchRequest, dispatchResponse, dispatchAddEvent } = this.props;
+
+    getToken()
+      .then((data: any) => {
+        this.socket = new WebSocket(`ws://events.lindev.local:7443/${data.data.token}`);
+
+        this.socket.onopen = () => {
+          console.log('connection opened!');
+        }
+
+        this.socket.onmessage = (e: any) => {
+          console.log('new message');
+          const data = JSON.parse(e.data);
+          /*
+          * check if body is an object because the inital connection will
+          * send a message that is just a string and there's no need to add
+          * that to redux state
+          */
+          if (typeof data.body === 'object') {
+            dispatchAddEvent(data.body);
+          }
+          console.log(this.props.events);
+          this.setState({ socketMessages: e });
+        }
+
+        this.socket.onclose = () => {
+          console.log('closed');
+        }
+      })
 
     if (notifications.beta.get() === 'open') {
       this.setState({ betaNotification: true });
     }
-
-    getToken()
-    .then((data: any) => {
-      console.log(data);
-      this.socket = new WebSocket(`ws://events.lindev.local:7443/${data.data.token}`);
-
-      this.socket.onopen = () => {
-        console.log('opened');
-      }
-
-      this.socket.onmessage = (e: any) => {
-        console.log('message recieved!');
-        console.log(e)
-        this.setState({ socketMessages: e });
-      }
-
-      this.socket.onclose = () => {
-        console.log('closed');
-      }
-    })
 
     dispatchRequest(['profile']);
     getProfile()
@@ -426,6 +439,8 @@ const mapDispatchToProps = (dispatch: Dispatch<any>) => bindActionCreators(
   {
     dispatchRequest: request,
     dispatchResponse: response,
+    dispatchRemoveEvent: removeEvent, 
+    dispatchAddEvent: addEvent
   },
   dispatch,
 );
@@ -434,6 +449,7 @@ const mapStateToProps = (state: Linode.AppState) => ({
   longLivedLoaded: Boolean(pathOr(false, ['resources', 'profile', 'data'], state)),
   userId: pathOr(null,['resources', 'profile', 'data', 'uid'], state),
   documentation: state.documentation,
+  events: state.events,
 });
 
 export const connected = connect(mapStateToProps, mapDispatchToProps);
