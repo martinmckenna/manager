@@ -290,7 +290,6 @@ export class App extends React.Component<CombinedProps, State> {
           if (typeof data.body === 'object') {
             dispatchAddEvent(data.body);
           }
-          console.log(this.props.events);
           this.setState({ socketMessages: e });
         }
 
