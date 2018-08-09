@@ -30,7 +30,7 @@ import PromiseLoader, { PromiseLoaderResponse } from 'src/components/PromiseLoad
 import Select from 'src/components/Select';
 import Table from 'src/components/Table';
 import TextField from 'src/components/TextField';
-import { events$, resetEventsPolling } from 'src/events';
+import { resetEventsPolling } from 'src/events';
 import { linodeInTransition as isLinodeInTransition } from 'src/features/linodes/transitions';
 import { sendToast } from 'src/features/ToastNotifications/toasts';
 import { cancelBackups, enableBackups, getLinodeBackups, getType, takeSnapshot, updateBackupsWindow } from 'src/services/linodes';
@@ -175,26 +175,26 @@ class LinodeBackup extends React.Component<CombinedProps, State> {
 
   componentDidMount() {
     this.mounted = true;
-    this.eventSubscription = events$
-      .filter(e => [
-        'linode_snapshot',
-        'backups_enable',
-        'backups_cancel',
-        'backups_restore',
-      ].includes(e.action))
-      .filter(e => !e._initial && e.status === 'finished')
-      .subscribe((e) => {
-        getLinodeBackups(this.props.linodeID)
-          .then((data) => {
-            this.setState({ backups: data });
-          })
-          .catch(() => {
-            /* @todo: how do we want to display this error? */
-            this.setState({ enabling: false })
-          });
-      });
-    const { enableOnLoad } = pathOr(false, ['location','state'], this.props);
-    if (enableOnLoad && !this.props.backupsEnabled) { this.enableBackups(); }
+  //   this.eventSubscription = events$
+  //     .filter(e => [
+  //       'linode_snapshot',
+  //       'backups_enable',
+  //       'backups_cancel',
+  //       'backups_restore',
+  //     ].includes(e.action))
+  //     .filter(e => !e._initial && e.status === 'finished')
+  //     .subscribe((e) => {
+  //       getLinodeBackups(this.props.linodeID)
+  //         .then((data) => {
+  //           this.setState({ backups: data });
+  //         })
+  //         .catch(() => {
+  //           /* @todo: how do we want to display this error? */
+  //           this.setState({ enabling: false })
+  //         });
+  //     });
+  //   const { enableOnLoad } = pathOr(false, ['location','state'], this.props);
+  //   if (enableOnLoad && !this.props.backupsEnabled) { this.enableBackups(); }
   }
 
   componentWillUnmount() {
