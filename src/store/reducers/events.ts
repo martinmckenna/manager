@@ -1,6 +1,8 @@
 const ADD_EVENT = '@@manager/ADD_EVENT';
 const REMOVE_EVENT = '@@manager/REMOVE_EVENT';
 
+import { pathOr } from 'ramda';
+
 export const addEvent = (event: Partial<Linode.Event>) => {
   return {
     type: ADD_EVENT,
@@ -33,7 +35,7 @@ const events = (state = defaultState, action: ActionTypes) => {
       return [
         ...state,
         {
-          id: action.id,
+          id: pathOr(null, ['entity', 'id'], action),
           action: action.action,
           entity: action.entity,
         }

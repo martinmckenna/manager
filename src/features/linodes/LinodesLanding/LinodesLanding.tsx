@@ -1,6 +1,6 @@
 // import * as moment from 'moment';
 // import { clone, compose, defaultTo, lensPath, map, over, path, pathEq, pathOr } from 'ramda';
-import { compose, pathOr } from 'ramda';
+import { clone, compose, pathOr } from 'ramda';
 import * as React from 'react';
 import { connect, Dispatch } from 'react-redux';
 import { bindActionCreators } from 'redux';
@@ -72,6 +72,7 @@ interface ConfigDrawerState {
 
 interface State {
   linodes: Linode.EnhancedLinode[];
+  linodesToUpdate: any;
   notifications?: Linode.Notification[];
   page: number;
   pages: number;
@@ -109,29 +110,45 @@ type CombinedProps = TypesContextProps
 //   }
 // };
 
+const isRelevantEvent = (status: string) => {
+  if (status === 'linode_boot') {
+    return true;
+  }
+  return false;
+} 
+
 export class ListLinodes extends React.Component<CombinedProps, State> {
   eventsSub: Subscription;
   notificationSub: Subscription;
   mounted: boolean = false;
 
-  state: State = {
-    linodes: pathOr([], ['response', 'data'], this.props.linodes),
-    page: pathOr(-1, ['response', 'page'], this.props.linodes),
-    pages: pathOr(-1, ['response', 'pages'], this.props.linodes),
-    results: pathOr(0, ['response', 'results'], this.props.linodes),
-    configDrawer: {
-      open: false,
-      configs: [],
-      error: undefined,
-      selected: undefined,
-      action: (id: number) => null,
-    },
-    pageSize: 25,
-    powerAlertOpen: false,
-    bootOption: null,
-    selectedLinodeId: null,
-    selectedLinodeLabel: '',
-  };
+  constructor(props: CombinedProps){
+    super(props);
+
+    const linodesToUpdate = props.events.filter(event => {
+      return isRelevantEvent(event.action!);
+    });
+
+    this.state = {
+      linodes: pathOr([], ['response', 'data'], this.props.linodes),
+      linodesToUpdate,
+      page: pathOr(-1, ['response', 'page'], this.props.linodes),
+      pages: pathOr(-1, ['response', 'pages'], this.props.linodes),
+      results: pathOr(0, ['response', 'results'], this.props.linodes),
+      configDrawer: {
+        open: false,
+        configs: [],
+        error: undefined,
+        selected: undefined,
+        action: (id: number) => null,
+      },
+      pageSize: 25,
+      powerAlertOpen: false,
+      bootOption: null,
+      selectedLinodeId: null,
+      selectedLinodeLabel: '',
+    }
+  }
 
   static docs = [
     {
@@ -149,18 +166,22 @@ export class ListLinodes extends React.Component<CombinedProps, State> {
 
   ];
 
-  isRelevantEvent = (status: string) => {
-    if (status === 'linode_boot') {
-      return true;
+  pollLinodes: any = null; 
+
+  componentDidUpdate() {
+    if(!this.state.linodesToUpdate.length && this.pollLinodes !== null) {
+      console.log('polling stopped');
+      clearInterval(this.pollLinodes);
     }
-    return false;
-  } 
+  }
 
   componentDidMount() {
     this.mounted = true;
     // const mountTime = moment().subtract(5, 'seconds');
 
     const { typesLastUpdated, typesLoading, typesRequest } = this.props;
+
+    const { linodesToUpdate } = this.state;
 
     if (typesLastUpdated === 0 && !typesLoading) {
       typesRequest();
@@ -170,45 +191,60 @@ export class ListLinodes extends React.Component<CombinedProps, State> {
     * we only want to update Linodes if we have a Linode that's
     * in the process of booting
     */
-    const linodesToUpdate = this.props.events.filter(event => {
-      return this.isRelevantEvent(event.action!);
-    });
 
     /*
     * Now that we have our linodes that we know need to be updated,
     * we need to run getLinode for that linode
     */
     const getEachLinode = () => {
-      return !!linodesToUpdate.length && Promise.all(linodesToUpdate.map(linodeToUpdate => {
+      if (!linodesToUpdate.length && this.pollLinodes !== null) {
+        console.log('polling stopped');
+        clearInterval(this.pollLinodes);
+      }
+
+      return Promise.all(linodesToUpdate.map((linodeToUpdate: any) => {
         return new Promise(() => {
           return getLinode(linodeToUpdate.entity!.id)
             .then((response: any) => {
+              const linodesToUpdateClone = clone(this.state.linodesToUpdate);
+              const newLinodesToUpdate =
+                (response.data.status === 'running' || response.data.status === 'offline')
+                  ? linodesToUpdateClone.filter((linode: Linode.Linode) => {
+                      // linode.id might be null so this needs to be fixed
+                      return linode.id !== response.data.id;
+                    })
+                  : linodesToUpdateClone;
+
+              console.log('list of Linodes that need updating');
+              console.log(newLinodesToUpdate);
+              
               this.setState({
                 linodes: [
                   ...this.state.linodes.filter(linode => linode.id !== response.data.id),
                   ...response.data,
-                ]
+                ],
+                linodesToUpdate: newLinodesToUpdate,
               })
               return response;
             })
             .catch(e => e)
         })
       }))
+        // here we will determine if the Linode is finished being
+        // provisioned and clear the event from Redux state
         .then((response: any) => response)
+        // if there's an error, keep polling
         .catch(e => e)
     }
-    // const promises = linodesToUpdate.map(linodeToUpdate => {
-    //   return new Promise(() => {
-    //     return getLinode(linodeToUpdate.entity!.id)
-    //       .then(data => data)
-    //       .catch(e => e)
-    //   })
-    // });
 
-    setInterval(
-      () => getEachLinode(),
-      4000
-    )
+    if (!!linodesToUpdate.length) {
+      console.log('polling started');
+      this.pollLinodes = setInterval(
+        () => getEachLinode(),
+        4000
+      )
+    }
+
 
     // this.eventsSub = events$
     //   .filter(newLinodeEvents(mountTime))
@@ -256,6 +292,9 @@ export class ListLinodes extends React.Component<CombinedProps, State> {
 
   componentWillUnmount() {
     this.mounted = false;
+    if (this.pollLinodes !== null) {
+      clearInterval(this.pollLinodes);
+    }
     // this.eventsSub.unsubscribe();
     // this.notificationSub.unsubscribe();
   }

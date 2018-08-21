@@ -435,10 +435,10 @@ class LinodeDetail extends React.Component<CombinedProps, State> {
 
   componentWillUnmount() {
     this.mounted = false;
-    this.eventsSubscription.unsubscribe();
-    this.diskResizeSubscription.unsubscribe();
-    this.notificationsSubscription.unsubscribe();
-    this.volumeEventsSubscription.unsubscribe();
+    // this.eventsSubscription.unsubscribe();
+    // this.diskResizeSubscription.unsubscribe();
+    // this.notificationsSubscription.unsubscribe();
+    // this.volumeEventsSubscription.unsubscribe();
   }
 
   componentDidUpdate(prevProps: CombinedProps, prevState: State) {

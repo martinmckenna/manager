@@ -139,9 +139,9 @@ class UserNotificationsMenu extends React.Component<CombinedProps, State> {
   }
 
   componentWillUnmount() {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
+    // if (this.subscription) {
+    //   this.subscription.unsubscribe();
+    // }
   }
 
   closePrivacyPolicyModal = () => this.setState({ privacyPolicyModalOpen: false })

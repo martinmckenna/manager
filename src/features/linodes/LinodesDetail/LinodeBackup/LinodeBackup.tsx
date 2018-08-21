@@ -199,7 +199,7 @@ class LinodeBackup extends React.Component<CombinedProps, State> {
 
   componentWillUnmount() {
     this.mounted = false;
-    this.eventSubscription.unsubscribe();
+    // this.eventSubscription.unsubscribe();
   }
 
   initWindows(timezone: string) {

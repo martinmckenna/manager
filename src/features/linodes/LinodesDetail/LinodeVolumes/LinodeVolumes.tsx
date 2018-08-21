@@ -181,7 +181,7 @@ export class LinodeVolumes extends React.Component<CombinedProps, State> {
 
   componentWillUnmount() {
     this.mounted = false;
-    this.eventSubscription.unsubscribe();
+    // this.eventSubscription.unsubscribe();
   }
 
   getVolumes = () => {
