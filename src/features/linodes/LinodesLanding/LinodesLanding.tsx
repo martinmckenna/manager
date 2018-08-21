@@ -197,11 +197,6 @@ export class ListLinodes extends React.Component<CombinedProps, State> {
     * we need to run getLinode for that linode
     */
     const getEachLinode = () => {
-      if (!linodesToUpdate.length && this.pollLinodes !== null) {
-        console.log('polling stopped');
-        clearInterval(this.pollLinodes);
-      }
-
       return Promise.all(linodesToUpdate.map((linodeToUpdate: any) => {
         return new Promise(() => {
           return getLinode(linodeToUpdate.entity!.id)
@@ -210,7 +205,7 @@ export class ListLinodes extends React.Component<CombinedProps, State> {
               const newLinodesToUpdate =
                 (response.data.status === 'running' || response.data.status === 'offline')
                   ? linodesToUpdateClone.filter((linode: Linode.Linode) => {
-                      // linode.id might be null so this needs to be fixed
+                      // linode.id might be null so this needs to be handled
                       return linode.id !== response.data.id;
                     })
                   : linodesToUpdateClone;
