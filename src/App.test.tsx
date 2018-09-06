@@ -20,8 +20,8 @@ it('renders without crashing', () => {
               grid: '',
               switchWrapper: '',
             }}
-            addEvent={jest.fn()}
-            removeEvent={jest.fn()}
+            dispatchAddEvent={jest.fn()}
+            dispatchRemoveEvent={jest.fn()}
             events={{} as any}
             longLivedLoaded
             userId={123456}

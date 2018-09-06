@@ -22,6 +22,8 @@ import { TypesProvider, WithTypesContext } from 'src/context/types';
 import Footer from 'src/features/Footer';
 // import ToastNotifications from 'src/features/ToastNotifications';
 import TopMenu from 'src/features/TopMenu';
+
+import { getEvents } from 'src/services/account';
 import { getDeprecatedLinodeTypes , getLinodeTypes } from 'src/services/linodes';
 // import VolumeDrawer from 'src/features/Volumes/VolumeDrawer';
 import { getRegions } from 'src/services/misc';
@@ -283,6 +285,9 @@ export class App extends React.Component<CombinedProps, State> {
           console.log('new message');
           const data = JSON.parse(e.data);
           console.log(data);
+          getEvents()
+            .then(response => console.log(response.data))
+            .catch(e => e)
           /*
           * check if body is an object because the inital connection will
           * send a message that is just a string and there's no need to add
