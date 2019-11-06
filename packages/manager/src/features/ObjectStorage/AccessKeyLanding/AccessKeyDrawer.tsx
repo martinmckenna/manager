@@ -18,7 +18,8 @@ import useFlags from 'src/hooks/useFlags';
 import { ApplicationState } from 'src/store';
 import EnableObjectStorageModal from '../EnableObjectStorageModal';
 import { confirmObjectStorage } from '../utilities';
-import { MODES } from './AccessKeyLanding';
+
+export type MODES = 'creating' | 'editing';
 
 export interface Props {
   open: boolean;
