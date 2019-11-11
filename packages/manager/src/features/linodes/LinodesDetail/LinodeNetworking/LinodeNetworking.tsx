@@ -582,9 +582,7 @@ class LinodeNetworking extends React.Component<CombinedProps, State> {
       pathOr([], ['ipv4', 'public'], linodeIPs).map((i: IPAddress) => i.address)
     );
     const privateIPs = uniq<string>(
-      pathOr([], ['ipv4', 'private'], linodeIPs).map(
-        (i: IPAddress) => i.address
-      )
+      (linodeIPs?.ipv4?.private || []).map(i => i.address)
     );
     const sharedIPs = uniq<string>(
       pathOr([], ['ipv4', 'shared'], linodeIPs).map((i: IPAddress) => i.address)
@@ -651,10 +649,7 @@ const mapDispatchToProps: MapDispatchToProps<DispatchProps, {}> = (
   upsertLinode: linode => dispatch(_upsertLinode(linode))
 });
 
-const connected = connect(
-  undefined,
-  mapDispatchToProps
-);
+const connected = connect(undefined, mapDispatchToProps);
 
 const enhanced = recompose<CombinedProps, {}>(connected, linodeContext, styled);
 
