@@ -18,7 +18,10 @@ describe('OverflowIPs', () => {
       </Provider>
     );
     const rendered = result.find('OverflowIPs');
-    const numberText = result.find('span').text();
+    const numberText = result
+      .find('span')
+      .first()
+      .text();
 
     expect(rendered).toHaveLength(1);
     expect(numberText).toBe('+1');
